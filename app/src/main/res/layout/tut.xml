@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="5dp"
+    android:layout_margin="10dp">
+
+    <TextView
+        android:textSize="17sp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:text="1. The status will be seen in the app after it loads in Whatsapp or you've viewed the status" />
+    <TextView
+        android:textSize="17sp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:text="2. After status is been loaded, or viewed in the Whatsapp, open the app for you to see all sorts of Status." />
+    <TextView
+        android:textSize="17sp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:text="3. Click on the item you want to view, after opening, a button with + will be visible, on which after you click it, the various menu items with
+relevant options will appear for you to choose. Here you can either save, share(direct from the app) or delete the status." />
+    <!--<TextView
+        android:textSize="17sp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:text="- You can also Use Multiple Saving.
+         Long hold to start off selecting the status items." />-->
+</LinearLayout>

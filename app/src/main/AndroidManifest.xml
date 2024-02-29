@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.statuses.statussaver">
+
+    <uses-permission
+        android:name="com.google.android.gms.permission.AD_ID"
+        tools:node="remove" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/statusavericon"
+        android:label="@string/app_name"
+        android:requestLegacyExternalStorage="true"
+        android:roundIcon="@drawable/statusavericon"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.StatusSaver">
+        <activity
+            android:name=".viewer.SavedVideoViewer"
+            android:theme="@style/AppTheme.NoActionBar"
+           >
+
+        </activity>
+        <activity
+            android:name=".viewer.SavedImageViewer"
+            android:theme="@style/AppTheme.NoActionBar"
+
+            />
+        <activity
+            android:name=".Activity.SplashScreen"
+            android:theme="@style/AppThemeSplash" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <activity
+            android:name=".MainActivity"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".viewer.ImageViewer"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".viewer.VideoPlayer"
+            android:theme="@style/AppTheme.NoActionBar" /> <!-- Sample AdMob app ID: ca-app-pub-3940256099942544~3347511713 -->
+        <!-- App ID   - ca-app-pub-7913609625908071~4172296378 -->
+        <!-- Banner adUnit ID   ca-app-pub-7913609625908071/2859214701 -->
+        <!-- Interstitial adUnit ID    ca-app-pub-7913609625908071/5998375754 -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-7913609625908071~4172296378" />
+    </application>
+
+</manifest>
