@@ -3,9 +3,12 @@ package com.statuses.statussaver.fragments.whatsapp;
 import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -21,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
@@ -410,38 +414,81 @@ public class WhatsappImageFragment extends Fragment {
     }
 
 
-    public void getStatus(){
-        File[] listFiles ={};
 
-        File[] listFiles1 = new File(new StringBuffer().append(Environment.getExternalStorageDirectory().getAbsolutePath()).append("/WhatsApp/Media/.Statuses/").toString()).listFiles();
-        File[] listFiles2 = new File(new StringBuffer().append(Environment.getExternalStorageDirectory().getAbsolutePath()).append("/Android/media/com.whatsapp/WhatsApp/Media/.Statuses/").toString()).listFiles();
+    public void getStatus() {
+        ArrayList<ImageModel> arrayList = new ArrayList<>();
 
+        // Check for the status directory using the appropriate storage access methods
+        Context context = getContext(); // Assuming you are in a context-aware environment, otherwise replace getContext() with your Context object
 
-        if(listFiles1!=null && listFiles2!=null) {
-            listFiles = Arrays.copyOf(listFiles1, listFiles1.length + listFiles2.length);
-            System.arraycopy(listFiles2, 0, listFiles, listFiles1.length, listFiles2.length);
-        }
-        else if(listFiles1==null && listFiles2!=null)
-        {
-            listFiles = listFiles2;
-        }
-        else if(listFiles2==null && listFiles1!=null)
-        {
-            listFiles=listFiles1;
-        }
-               //converting list to array
-        if (listFiles != null && listFiles.length >= 1) {
-            Arrays.sort(listFiles, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
-        }
-        if (listFiles != null) {
-            for (File file : listFiles) {
-                if (file.getName().endsWith(".jpg") || file.getName().endsWith(".jpeg") || file.getName().endsWith(".png")) {
-                    ImageModel model=new ImageModel(file.getAbsolutePath());
-                    arrayList.add(model);
+        // Using MediaStore to access WhatsApp statuses (considering internal storage)
+        String selection = MediaStore.Files.FileColumns.DISPLAY_NAME + " LIKE '%WhatsApp%' AND (" +
+                MediaStore.Files.FileColumns.MEDIA_TYPE + "=? OR " +
+                MediaStore.Files.FileColumns.MEDIA_TYPE + "=?)";
+        String[] selectionArgs = new String[]{
+                String.valueOf(MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE),
+                String.valueOf(MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO)
+        };
+
+        Cursor cursor = context.getContentResolver().query(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, // Can also use MediaStore.Video.Media.EXTERNAL_CONTENT_URI for videos
+                null,
+                selection,
+                selectionArgs,
+                MediaStore.Files.FileColumns.DATE_MODIFIED + " DESC"
+        );
+
+        if (cursor != null) {
+            try {
+                while (cursor.moveToNext()) {
+                    String filePath = cursor.getString(cursor.getColumnIndex(MediaStore.Files.FileColumns.DATA));
+                    File file = new File(filePath);
+                    if (file.exists() && (file.getName().endsWith(".jpg") || file.getName().endsWith(".jpeg") || file.getName().endsWith(".png"))) {
+                        ImageModel model = new ImageModel(filePath);
+                        arrayList.add(model);
+                    }
                 }
+            } finally {
+                cursor.close();
             }
         }
+
+        // Now, 'arrayList' should contain the status images (and potentially videos) from WhatsApp
     }
+
+
+    //    public void getStatus(){
+//        File[] listFiles ={};
+//
+//        File[] listFiles1 = new File(new StringBuffer().append(Environment.getExternalStorageDirectory().getAbsolutePath()).append("/WhatsApp/Media/.Statuses/").toString()).listFiles();
+//        File[] listFiles2 = new File(new StringBuffer().append(Environment.getExternalStorageDirectory().getAbsolutePath()).append("/Android/media/com.whatsapp/WhatsApp/Media/.Statuses/").toString()).listFiles();
+//
+//
+//        if(listFiles1!=null && listFiles2!=null) {
+//            listFiles = Arrays.copyOf(listFiles1, listFiles1.length + listFiles2.length);
+//            System.arraycopy(listFiles2, 0, listFiles, listFiles1.length, listFiles2.length);
+//        }
+//        else if(listFiles1==null && listFiles2!=null)
+//        {
+//            listFiles = listFiles2;
+//        }
+//        else if(listFiles2==null && listFiles1!=null)
+//        {
+//            listFiles=listFiles1;
+//        }
+//               //converting list to array
+//        if (listFiles != null && listFiles.length >= 1) {
+//            Arrays.sort(listFiles, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
+//        }
+//        if (listFiles != null) {
+//            for (File file : listFiles) {
+//                if (file.getName().endsWith(".jpg") || file.getName().endsWith(".jpeg") || file.getName().endsWith(".png")) {
+//                    ImageModel model=new ImageModel(file.getAbsolutePath());
+//                    arrayList.add(model);
+//                }
+//            }
+//        }
+//    }
     public void deleteRows() {
         SparseBooleanArray selected = waImageAdapter
                 .getSelectedIds();//Get selected ids

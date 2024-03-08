@@ -86,7 +86,7 @@ public class MainActivity extends AppCompatActivity
 
 
            //Check whatsapp permissions in android 11 and above
-           checkWhatsAppPermission();
+          // checkWhatsAppPermission();
 
         androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar);
 
@@ -244,6 +244,8 @@ public class MainActivity extends AppCompatActivity
 
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
         intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, Uri.parse("content://com.android.externalstorage.documents/tree/primary%3AAndroid%2Fmedia/document/primary%3AAndroid%2Fmedia%2Fcom.whatsapp%2FWhatsApp%2FMedia%2F.Statuses"));
+
+        Uri wa_status_uri = Uri.parse("content://com.android.externalstorage.documents/tree/primary%3AAndroid%2Fmedia/document/primary%3AAndroid%2Fmedia%2Fcom.whatsapp%2FWhatsApp%2FMedia%2F.Statuses");
         launcher.launch(intent);
     }
     private boolean isMyServiceRunning(Class<?> cls) {
