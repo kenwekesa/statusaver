@@ -3,12 +3,14 @@ package com.statuses.statussaver.fragments.whatsapp;
 import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -416,44 +418,51 @@ public class WhatsappImageFragment extends Fragment {
 
 
     public void getStatus() {
-        ArrayList<ImageModel> arrayList = new ArrayList<>();
+        arrayList.clear(); // Clear existing items
 
-        // Check for the status directory using the appropriate storage access methods
-        Context context = getContext(); // Assuming you are in a context-aware environment, otherwise replace getContext() with your Context object
+        ContentResolver contentResolver = getContext().getContentResolver();
+        Uri collection;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            collection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL);
+        } else {
+            collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+        }
 
-        // Using MediaStore to access WhatsApp statuses (considering internal storage)
-        String selection = MediaStore.Files.FileColumns.DISPLAY_NAME + " LIKE '%WhatsApp%' AND (" +
-                MediaStore.Files.FileColumns.MEDIA_TYPE + "=? OR " +
-                MediaStore.Files.FileColumns.MEDIA_TYPE + "=?)";
-        String[] selectionArgs = new String[]{
-                String.valueOf(MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE),
-                String.valueOf(MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO)
+        String[] projection = new String[] {
+                MediaStore.Images.Media._ID,
+                MediaStore.Images.Media.DISPLAY_NAME,
+                MediaStore.Images.Media.DATE_TAKEN,
+                MediaStore.Images.Media.DATA
         };
 
-        Cursor cursor = context.getContentResolver().query(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, // Can also use MediaStore.Video.Media.EXTERNAL_CONTENT_URI for videos
-                null,
+        String selection = MediaStore.Images.Media.DISPLAY_NAME + " LIKE ? AND " +
+                MediaStore.Images.Media.DISPLAY_NAME + " NOT LIKE ? AND " +
+                MediaStore.Images.Media.DATA + " LIKE ?";
+        String[] selectionArgs = new String[] {
+                "%.jpg",
+                "%.nomedia",
+                "%WhatsApp%"
+        };
+
+        String sortOrder = MediaStore.Images.Media.DATE_TAKEN + " DESC";
+
+        try (Cursor cursor = contentResolver.query(
+                collection,
+                projection,
                 selection,
                 selectionArgs,
-                MediaStore.Files.FileColumns.DATE_MODIFIED + " DESC"
-        );
+                sortOrder
+        )) {
+            int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
 
-        if (cursor != null) {
-            try {
-                while (cursor.moveToNext()) {
-                    String filePath = cursor.getString(cursor.getColumnIndex(MediaStore.Files.FileColumns.DATA));
-                    File file = new File(filePath);
-                    if (file.exists() && (file.getName().endsWith(".jpg") || file.getName().endsWith(".jpeg") || file.getName().endsWith(".png"))) {
-                        ImageModel model = new ImageModel(filePath);
-                        arrayList.add(model);
-                    }
-                }
-            } finally {
-                cursor.close();
+            while (cursor.moveToNext()) {
+                String filePath = cursor.getString(dataColumn);
+                ImageModel model = new ImageModel(filePath);
+                arrayList.add(model);
             }
         }
 
-        // Now, 'arrayList' should contain the status images (and potentially videos) from WhatsApp
+        waImageAdapter.notifyDataSetChanged();
     }
 
 
@@ -547,22 +556,32 @@ public class WhatsappImageFragment extends Fragment {
 
 
 
-    @TargetApi(23)
+    @TargetApi(Build.VERSION_CODES.M)
     public boolean requestPermission() {
-        String[] permissions = {
-
-                "android.permission.READ_EXTERNAL_STORAGE",
-                "android.permission.WRITE_EXTERNAL_STORAGE"
-        };
-        requestPermissions(permissions, STORAGE_PERMISSION_CODE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestPermissions(new String[]{Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO}, STORAGE_PERMISSION_CODE);
+        } else {
+            requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, STORAGE_PERMISSION_CODE);
+        }
         return true;
     }
-
+    @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        //super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode==STORAGE_PERMISSION_CODE && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            //do somethings
-            getStatus();
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == STORAGE_PERMISSION_CODE && grantResults.length > 0) {
+            boolean allPermissionsGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
+            if (allPermissionsGranted) {
+                getStatus();
+            } else {
+                // Handle permission denied
+                Toast.makeText(getContext(), "Permissions are required to access statuses", Toast.LENGTH_LONG).show();
+            }
         }
     }
 }
