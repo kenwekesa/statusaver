@@ -1,11 +1,16 @@
 package com.statuses.statussaver.fragments.whatsapp;
 
+import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AlertDialog;
@@ -79,14 +84,24 @@ public class WhatsappVideosFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        v=inflater.inflate(R.layout.fragment_whatsapp_videos, container, false);
+        v = inflater.inflate(R.layout.fragment_whatsapp_videos, container, false);
         activity = getActivity();
         mInstance = this;
         swipeRefreshLayout = (SwipeRefreshLayout) v.findViewById(R.id.ref_wa_video);
         recyclerView = (RecyclerView) v.findViewById(R.id.recyclerview_wa_video);
         progressBar = (ProgressBar) v.findViewById(R.id.progressbar_wa_video);
 
-        populateRecyclerView();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (activity.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                populateRecyclerView();
+            } else {
+                requestPermission();
+            }
+        } else {
+            populateRecyclerView();
+        }
+
+        implementRecyclerViewClickListeners();
         implementRecyclerViewClickListeners();
 
         /*MobileAds.initialize(activity, getString(R.string.admob_app_id));
@@ -294,53 +309,101 @@ public class WhatsappVideosFragment extends Fragment {
 
 
 
+//    public void getStatus() {
+//        ArrayList<ImageModel> arrayList = new ArrayList<>();
+//
+//        // Check for the status directory using the appropriate storage access methods
+//        Context context = getContext(); // Assuming you are in a context-aware environment, otherwise replace getContext() with your Context object
+//
+//        // Using MediaStore to access WhatsApp videos (considering internal storage)
+//        String selection = MediaStore.Files.FileColumns.DISPLAY_NAME + " LIKE '%WhatsApp%' AND (" +
+//                MediaStore.Files.FileColumns.MEDIA_TYPE + "=?  OR" +  // Add OR operator
+//                MediaStore.Files.FileColumns.MEDIA_TYPE + "=?)";
+//        String[] selectionArgs = new String[]{
+//                String.valueOf(MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO),
+//                // Add video extensions here (ensure . at the beginning)
+//                ".mp4",
+//                ".mkv",
+//                ".avi",
+//                ".gif",
+//                ".mov",  // Example extension
+//                ".3gp"   // Example extension
+//        };
+//
+//        Cursor cursor = context.getContentResolver().query(
+//                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+//                null,
+//                selection,
+//                selectionArgs,
+//                MediaStore.Files.FileColumns.DATE_MODIFIED + " DESC"
+//        );
+//
+//        if (cursor != null) {
+//            try {
+//                while (cursor.moveToNext()) {
+//                    String filePath = cursor.getString(cursor.getColumnIndex(MediaStore.Files.FileColumns.DATA));
+//                    File file = new File(filePath);
+//                    if (file.exists()) {
+//                        ImageModel model = new ImageModel(filePath); // Change to VideoModel if applicable
+//                        arrayList.add(model);
+//                    }
+//                }
+//            } finally {
+//                cursor.close();
+//            }
+//        }
+//
+//        // Now, 'arrayList' should contain most WhatsApp video statuses
+//    }
+
+
     public void getStatus() {
-        ArrayList<ImageModel> arrayList = new ArrayList<>();
+        arrayList.clear(); // Clear existing items
 
-        // Check for the status directory using the appropriate storage access methods
-        Context context = getContext(); // Assuming you are in a context-aware environment, otherwise replace getContext() with your Context object
+        ContentResolver contentResolver = getContext().getContentResolver();
+        Uri collection;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            collection = MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL);
+        } else {
+            collection = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+        }
 
-        // Using MediaStore to access WhatsApp videos (considering internal storage)
-        String selection = MediaStore.Files.FileColumns.DISPLAY_NAME + " LIKE '%WhatsApp%' AND (" +
-                MediaStore.Files.FileColumns.MEDIA_TYPE + "=?  OR" +  // Add OR operator
-                MediaStore.Files.FileColumns.MEDIA_TYPE + "=?)";
-        String[] selectionArgs = new String[]{
-                String.valueOf(MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO),
-                // Add video extensions here (ensure . at the beginning)
-                ".mp4",
-                ".mkv",
-                ".avi",
-                ".gif",
-                ".mov",  // Example extension
-                ".3gp"   // Example extension
+        String[] projection = new String[] {
+                MediaStore.Video.Media._ID,
+                MediaStore.Video.Media.DISPLAY_NAME,
+                MediaStore.Video.Media.DATE_TAKEN,
+                MediaStore.Video.Media.DATA
         };
 
-        Cursor cursor = context.getContentResolver().query(
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                null,
+        String selection = MediaStore.Video.Media.DISPLAY_NAME + " LIKE ? AND " +
+                MediaStore.Video.Media.DISPLAY_NAME + " NOT LIKE ? AND " +
+                MediaStore.Video.Media.DATA + " LIKE ?";
+        String[] selectionArgs = new String[] {
+                "%.mp4",
+                "%.nomedia",
+                "%WhatsApp%"
+        };
+
+        String sortOrder = MediaStore.Video.Media.DATE_TAKEN + " DESC";
+
+        try (Cursor cursor = contentResolver.query(
+                collection,
+                projection,
                 selection,
                 selectionArgs,
-                MediaStore.Files.FileColumns.DATE_MODIFIED + " DESC"
-        );
+                sortOrder
+        )) {
+            int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA);
 
-        if (cursor != null) {
-            try {
-                while (cursor.moveToNext()) {
-                    String filePath = cursor.getString(cursor.getColumnIndex(MediaStore.Files.FileColumns.DATA));
-                    File file = new File(filePath);
-                    if (file.exists()) {
-                        ImageModel model = new ImageModel(filePath); // Change to VideoModel if applicable
-                        arrayList.add(model);
-                    }
-                }
-            } finally {
-                cursor.close();
+            while (cursor.moveToNext()) {
+                String filePath = cursor.getString(dataColumn);
+                ImageModel model = new ImageModel(filePath);
+                arrayList.add(model);
             }
         }
 
-        // Now, 'arrayList' should contain most WhatsApp video statuses
+        waVideoAdapter.notifyDataSetChanged();
     }
-
 
 
 
@@ -370,6 +433,36 @@ public class WhatsappVideosFragment extends Fragment {
         swipeRefreshLayout.setRefreshing(false);
     }
 
+    private static final int STORAGE_PERMISSION_CODE = 1;
+
+    @TargetApi(Build.VERSION_CODES.M)
+    public boolean requestPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestPermissions(new String[]{Manifest.permission.READ_MEDIA_VIDEO}, STORAGE_PERMISSION_CODE);
+        } else {
+            requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, STORAGE_PERMISSION_CODE);
+        }
+        return true;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == STORAGE_PERMISSION_CODE && grantResults.length > 0) {
+            boolean allPermissionsGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
+            if (allPermissionsGranted) {
+                getStatus();
+            } else {
+                Toast.makeText(getContext(), "Permissions are required to access statuses", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
