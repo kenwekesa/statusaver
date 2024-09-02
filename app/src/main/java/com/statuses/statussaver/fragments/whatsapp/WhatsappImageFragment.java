@@ -113,6 +113,8 @@ public class WhatsappImageFragment extends Fragment {
         mInstance = this;
         swipeRefreshLayout = (SwipeRefreshLayout) v.findViewById(R.id.ref);
         recyclerView = (RecyclerView) v.findViewById(R.id.recyclerview_wa_image);
+
+        waImageAdapter = new WhatsappImageAdapter(activity, arrayList);
         progressBar = (ProgressBar) v.findViewById(R.id.progressbar_wa);
 
         populateRecyclerView();
@@ -190,7 +192,7 @@ public class WhatsappImageFragment extends Fragment {
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new GridLayoutManager(activity, 2));
 
-        waImageAdapter = new WhatsappImageAdapter(activity, arrayList);
+//        waImageAdapter = new WhatsappImageAdapter(activity, arrayList);
         recyclerView.setAdapter(waImageAdapter);
         waImageAdapter.notifyDataSetChanged();
        if(checkPermission()) {
@@ -462,8 +464,11 @@ public class WhatsappImageFragment extends Fragment {
                 arrayList.add(model);
             }
         }
-
+        if (waImageAdapter != null) {
         waImageAdapter.notifyDataSetChanged();
+        } else {
+            Log.e("WhatsappImageFragment", "Adapter is null");
+        }
     }
 
 

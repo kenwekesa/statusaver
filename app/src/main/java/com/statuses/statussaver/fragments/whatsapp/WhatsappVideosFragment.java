@@ -89,6 +89,7 @@ public class WhatsappVideosFragment extends Fragment {
         mInstance = this;
         swipeRefreshLayout = (SwipeRefreshLayout) v.findViewById(R.id.ref_wa_video);
         recyclerView = (RecyclerView) v.findViewById(R.id.recyclerview_wa_video);
+        waVideoAdapter = new WhatsappVideoAdapter(activity, arrayList);
         progressBar = (ProgressBar) v.findViewById(R.id.progressbar_wa_video);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -142,7 +143,7 @@ public class WhatsappVideosFragment extends Fragment {
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new GridLayoutManager(activity, 2));
 
-        waVideoAdapter = new WhatsappVideoAdapter(activity, arrayList);
+//        waVideoAdapter = new WhatsappVideoAdapter(activity, arrayList);
         recyclerView.setAdapter(waVideoAdapter);
         waVideoAdapter.notifyDataSetChanged();
         progressBar.setVisibility(View.GONE);
@@ -400,7 +401,12 @@ public class WhatsappVideosFragment extends Fragment {
             }
         }
 
-        waVideoAdapter.notifyDataSetChanged();
+        if (waVideoAdapter != null) {
+            waVideoAdapter.notifyDataSetChanged();
+        } else {
+            Log.e("WhatsappVideosFragment", "Adapter is null");
+        }
+//        waVideoAdapter.notifyDataSetChanged();
     }
 
 //    public void getStatus() {
