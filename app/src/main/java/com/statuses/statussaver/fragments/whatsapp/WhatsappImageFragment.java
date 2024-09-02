@@ -418,8 +418,6 @@ public class WhatsappImageFragment extends Fragment {
         alertDialog.show();
     }
 
-
-
     public void getStatus() {
         arrayList.clear(); // Clear existing items
 
@@ -438,13 +436,14 @@ public class WhatsappImageFragment extends Fragment {
                 MediaStore.Images.Media.DATA
         };
 
-        String selection = MediaStore.Images.Media.DISPLAY_NAME + " LIKE ? AND " +
-                MediaStore.Images.Media.DISPLAY_NAME + " NOT LIKE ? AND " +
-                MediaStore.Images.Media.DATA + " LIKE ?";
+        // Updated selection to target WhatsApp status images
+        String selection = MediaStore.Images.Media.DATA + " LIKE ? AND " +
+                MediaStore.Images.Media.MIME_TYPE + " IN (?, ?, ?)";
         String[] selectionArgs = new String[] {
-                "%.jpg",
-                "%.nomedia",
-                "%WhatsApp%"
+                "%WhatsApp/Media/.Statuses%",
+                "image/jpeg",
+                "image/jpg",
+                "image/png"
         };
 
         String sortOrder = MediaStore.Images.Media.DATE_TAKEN + " DESC";
@@ -460,16 +459,70 @@ public class WhatsappImageFragment extends Fragment {
 
             while (cursor.moveToNext()) {
                 String filePath = cursor.getString(dataColumn);
-                ImageModel model = new ImageModel(filePath);
-                arrayList.add(model);
+                if (filePath != null && !filePath.toLowerCase().contains(".nomedia")) {
+                    ImageModel model = new ImageModel(filePath);
+                    arrayList.add(model);
+                }
             }
         }
+
         if (waImageAdapter != null) {
-        waImageAdapter.notifyDataSetChanged();
+            waImageAdapter.notifyDataSetChanged();
         } else {
             Log.e("WhatsappImageFragment", "Adapter is null");
         }
     }
+
+//    public void getStatus() {
+//        arrayList.clear(); // Clear existing items
+//
+//        ContentResolver contentResolver = getContext().getContentResolver();
+//        Uri collection;
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+//            collection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL);
+//        } else {
+//            collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+//        }
+//
+//        String[] projection = new String[] {
+//                MediaStore.Images.Media._ID,
+//                MediaStore.Images.Media.DISPLAY_NAME,
+//                MediaStore.Images.Media.DATE_TAKEN,
+//                MediaStore.Images.Media.DATA
+//        };
+//
+//        String selection = MediaStore.Images.Media.DISPLAY_NAME + " LIKE ? AND " +
+//                MediaStore.Images.Media.DISPLAY_NAME + " NOT LIKE ? AND " +
+//                MediaStore.Images.Media.DATA + " LIKE ?";
+//        String[] selectionArgs = new String[] {
+//                "%.jpg",
+//                "%.nomedia",
+//                "%WhatsApp%"
+//        };
+//
+//        String sortOrder = MediaStore.Images.Media.DATE_TAKEN + " DESC";
+//
+//        try (Cursor cursor = contentResolver.query(
+//                collection,
+//                projection,
+//                selection,
+//                selectionArgs,
+//                sortOrder
+//        )) {
+//            int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+//
+//            while (cursor.moveToNext()) {
+//                String filePath = cursor.getString(dataColumn);
+//                ImageModel model = new ImageModel(filePath);
+//                arrayList.add(model);
+//            }
+//        }
+//        if (waImageAdapter != null) {
+//        waImageAdapter.notifyDataSetChanged();
+//        } else {
+//            Log.e("WhatsappImageFragment", "Adapter is null");
+//        }
+//    }
 
 
     //    public void getStatus(){
