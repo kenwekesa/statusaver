@@ -2,7 +2,6 @@ package com.statuses.statussaver.recycler;
 
 import android.content.Context;
 import android.os.Build;
-import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.Menu;
 import android.view.MenuItem;

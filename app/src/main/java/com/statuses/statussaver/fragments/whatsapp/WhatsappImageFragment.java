@@ -52,6 +52,7 @@ import com.statuses.statussaver.InstanceHandler;
 import com.statuses.statussaver.R;
 import com.statuses.statussaver.adapter.WhatsappImageAdapter;
 import com.statuses.statussaver.model.ImageModel;
+import com.statuses.statussaver.model.MediaModel;
 import com.statuses.statussaver.recycler.RecyclerClickListener;
 import com.statuses.statussaver.recycler.RecyclerTouchListener;
 import com.statuses.statussaver.recycler.ToolbarActionModeCallback;
@@ -65,6 +66,7 @@ import java.io.File;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static android.content.ContentValues.TAG;
@@ -418,52 +420,17 @@ public class WhatsappImageFragment extends Fragment {
         alertDialog.show();
     }
 
+
+
     public void getStatus() {
         arrayList.clear(); // Clear existing items
 
-        ContentResolver contentResolver = getContext().getContentResolver();
-        Uri collection;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            collection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL);
+            // For Android 10 and above, use MediaStore
+            getStatusMediaStore();
         } else {
-            collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
-        }
-
-        String[] projection = new String[] {
-                MediaStore.Images.Media._ID,
-                MediaStore.Images.Media.DISPLAY_NAME,
-                MediaStore.Images.Media.DATE_TAKEN,
-                MediaStore.Images.Media.DATA
-        };
-
-        // Updated selection to target WhatsApp status images
-        String selection = MediaStore.Images.Media.DATA + " LIKE ? AND " +
-                MediaStore.Images.Media.MIME_TYPE + " IN (?, ?, ?)";
-        String[] selectionArgs = new String[] {
-                "%WhatsApp/Media/.Statuses%",
-                "image/jpeg",
-                "image/jpg",
-                "image/png"
-        };
-
-        String sortOrder = MediaStore.Images.Media.DATE_TAKEN + " DESC";
-
-        try (Cursor cursor = contentResolver.query(
-                collection,
-                projection,
-                selection,
-                selectionArgs,
-                sortOrder
-        )) {
-            int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-
-            while (cursor.moveToNext()) {
-                String filePath = cursor.getString(dataColumn);
-                if (filePath != null && !filePath.toLowerCase().contains(".nomedia")) {
-                    ImageModel model = new ImageModel(filePath);
-                    arrayList.add(model);
-                }
-            }
+            // For older versions, use direct file access
+            getStatusLegacy();
         }
 
         if (waImageAdapter != null) {
@@ -472,6 +439,145 @@ public class WhatsappImageFragment extends Fragment {
             Log.e("WhatsappImageFragment", "Adapter is null");
         }
     }
+
+
+    private void getStatusMediaStore() {
+        ContentResolver contentResolver = getContext().getContentResolver();
+        Uri collection = MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL);
+
+        String[] projection = new String[] {
+                MediaStore.Files.FileColumns._ID,
+                MediaStore.Files.FileColumns.DISPLAY_NAME,
+                MediaStore.Files.FileColumns.DATE_TAKEN,
+                MediaStore.Files.FileColumns.DATA,
+                MediaStore.Files.FileColumns.MEDIA_TYPE
+        };
+
+        String selection = MediaStore.Files.FileColumns.DATA + " LIKE ? AND " +
+                MediaStore.Files.FileColumns.MEDIA_TYPE + " IN (?, ?)";
+        String[] selectionArgs = new String[] {
+                "%WhatsApp%Media%.Statuses%",
+                String.valueOf(MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE),
+                String.valueOf(MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO)
+        };
+
+        String sortOrder = MediaStore.Files.FileColumns.DATE_TAKEN + " DESC";
+
+        try (Cursor cursor = contentResolver.query(
+                collection,
+                projection,
+                selection,
+                selectionArgs,
+                sortOrder
+        )) {
+            int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATA);
+            int mediaTypeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE);
+
+            while (cursor.moveToNext()) {
+                String filePath = cursor.getString(dataColumn);
+                int mediaType = cursor.getInt(mediaTypeColumn);
+                if (filePath != null && !filePath.toLowerCase().contains(".nomedia")) {
+//                    MediaModel model = new MediaModel(filePath, mediaType == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO);
+                    ImageModel model = new ImageModel(filePath);// mediaType == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO);
+                    arrayList.add(model);
+                }
+            }
+        }
+    }
+
+    private void getStatusLegacy() {
+        String[] paths = {
+                Environment.getExternalStorageDirectory() + "/WhatsApp/Media/.Statuses/",
+                Environment.getExternalStorageDirectory() + "/Android/media/com.whatsapp/WhatsApp/Media/.Statuses/"
+        };
+
+        for (String path : paths) {
+            File statusDir = new File(path);
+            if (statusDir.exists() && statusDir.isDirectory()) {
+                File[] files = statusDir.listFiles();
+                if (files != null) {
+                    for (File file : files) {
+
+//                        if (file.getName().endsWith(".jpg") || file.getName().endsWith(".jpeg") || file.getName().endsWith(".png")) {
+//                    ImageModel model=new ImageModel(file.getAbsolutePath());
+//                    arrayList.add(model);
+//                }
+                        if (file.isFile() && !file.getName().equals(".nomedia")) {
+                            String fileName = file.getName().toLowerCase();
+                            boolean isVideo = fileName.endsWith(".mp4") || fileName.endsWith(".3gp");
+                            ImageModel model = new ImageModel(file.getAbsolutePath());
+                            arrayList.add(model);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Sort by last modified date
+        Collections.sort(arrayList, (o1, o2) -> {
+            File f1 = new File(o1.getPath());
+            File f2 = new File(o2.getPath());
+            return Long.compare(f2.lastModified(), f1.lastModified());
+        });
+    }
+
+    // MediaModel class to handle both images and videos
+
+
+//    public void getStatus() {
+//        arrayList.clear(); // Clear existing items
+//
+//        ContentResolver contentResolver = getContext().getContentResolver();
+//        Uri collection;
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+//            collection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL);
+//        } else {
+//            collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+//        }
+//
+//        String[] projection = new String[] {
+//                MediaStore.Images.Media._ID,
+//                MediaStore.Images.Media.DISPLAY_NAME,
+//                MediaStore.Images.Media.DATE_TAKEN,
+//                MediaStore.Images.Media.DATA
+//        };
+//
+//        // Updated selection to target WhatsApp status images
+//        String selection = MediaStore.Images.Media.DATA + " LIKE ? AND " +
+//                MediaStore.Images.Media.MIME_TYPE + " IN (?, ?, ?)";
+//        String[] selectionArgs = new String[] {
+//                "%WhatsApp/Media/.Statuses%",
+//                "image/jpeg",
+//                "image/jpg",
+//                "image/png"
+//        };
+//
+//        String sortOrder = MediaStore.Images.Media.DATE_TAKEN + " DESC";
+//
+//        try (Cursor cursor = contentResolver.query(
+//                collection,
+//                projection,
+//                selection,
+//                selectionArgs,
+//                sortOrder
+//        )) {
+//            int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+//
+//            while (cursor.moveToNext()) {
+//                String filePath = cursor.getString(dataColumn);
+//                if (filePath != null && !filePath.toLowerCase().contains(".nomedia")) {
+//                    ImageModel model = new ImageModel(filePath);
+//                    arrayList.add(model);
+//                }
+//            }
+//        }
+//
+//        if (waImageAdapter != null) {
+//            waImageAdapter.notifyDataSetChanged();
+//        } else {
+//            Log.e("WhatsappImageFragment", "Adapter is null");
+//        }
+//    }
 
 //    public void getStatus() {
 //        arrayList.clear(); // Clear existing items
