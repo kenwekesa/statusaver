@@ -375,13 +375,10 @@ public class WhatsappVideosFragment extends Fragment {
                 MediaStore.Video.Media.DATA
         };
 
-        String selection = MediaStore.Video.Media.DISPLAY_NAME + " LIKE ? AND " +
-                MediaStore.Video.Media.DISPLAY_NAME + " NOT LIKE ? AND " +
-                MediaStore.Video.Media.DATA + " LIKE ?";
+        // Corrected selection query
+        String selection = MediaStore.Video.Media.DATA + " LIKE ?";
         String[] selectionArgs = new String[] {
-                "%.mp4",
-                "%.nomedia",
-                "%WhatsApp%"
+                "%WhatsApp/Media/.Statuses%"
         };
 
         String sortOrder = MediaStore.Video.Media.DATE_TAKEN + " DESC";
@@ -404,6 +401,54 @@ public class WhatsappVideosFragment extends Fragment {
 
         waVideoAdapter.notifyDataSetChanged();
     }
+
+//    public void getStatus() {
+//        arrayList.clear(); // Clear existing items
+//
+//        ContentResolver contentResolver = getContext().getContentResolver();
+//        Uri collection;
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+//            collection = MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL);
+//        } else {
+//            collection = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+//        }
+//
+//        String[] projection = new String[] {
+//                MediaStore.Video.Media._ID,
+//                MediaStore.Video.Media.DISPLAY_NAME,
+//                MediaStore.Video.Media.DATE_TAKEN,
+//                MediaStore.Video.Media.DATA
+//        };
+//
+//        String selection = MediaStore.Video.Media.DISPLAY_NAME + " LIKE ? AND " +
+//                MediaStore.Video.Media.DISPLAY_NAME + " NOT LIKE ? AND " +
+//                MediaStore.Video.Media.DATA + " LIKE ?";
+//        String[] selectionArgs = new String[] {
+//                "%.mp4",
+//                "%.nomedia",
+//                "%WhatsApp%"
+//        };
+//
+//        String sortOrder = MediaStore.Video.Media.DATE_TAKEN + " DESC";
+//
+//        try (Cursor cursor = contentResolver.query(
+//                collection,
+//                projection,
+//                selection,
+//                selectionArgs,
+//                sortOrder
+//        )) {
+//            int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA);
+//
+//            while (cursor.moveToNext()) {
+//                String filePath = cursor.getString(dataColumn);
+//                ImageModel model = new ImageModel(filePath);
+//                arrayList.add(model);
+//            }
+//        }
+//
+//        waVideoAdapter.notifyDataSetChanged();
+//    }
 
 
 
