@@ -190,6 +190,9 @@ public class WhatsappImageFragment extends Fragment {
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new GridLayoutManager(activity, 2));
 
+        waImageAdapter = new WhatsappImageAdapter(activity, arrayList);
+        recyclerView.setAdapter(waImageAdapter);
+        waImageAdapter.notifyDataSetChanged();
        if(checkPermission()) {
            getStatus();
        }
@@ -197,9 +200,7 @@ public class WhatsappImageFragment extends Fragment {
        {
            requestPermission();
        }
-        waImageAdapter = new WhatsappImageAdapter(activity, arrayList);
-        recyclerView.setAdapter(waImageAdapter);
-        waImageAdapter.notifyDataSetChanged();
+
         progressBar.setVisibility(View.GONE);
     }
 

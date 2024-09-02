@@ -109,12 +109,12 @@ public class WhatsappVideosFragment extends Fragment {
         mInterstitialAd.setAdUnitId(getString(R.string.interstitial_full_screen));
         mInterstitialAd.loadAd(new AdRequest.Builder().build());*/
 
-        AdView adView = new AdView(activity);
-        adView.setAdSize(AdSize.BANNER);
-        adView.setAdUnitId("ca-app-pub-3940256099942544/6300978111");
-        mAdView = v.findViewById(R.id.vadView);
-        AdRequest adRequest = new AdRequest.Builder().build();
-        mAdView.loadAd(adRequest);
+//        AdView adView = new AdView(activity);
+//        adView.setAdSize(AdSize.BANNER);
+//        adView.setAdUnitId("ca-app-pub-3940256099942544/6300978111");
+//        mAdView = v.findViewById(R.id.vadView);
+//        AdRequest adRequest = new AdRequest.Builder().build();
+//        mAdView.loadAd(adRequest);
 
         swipeRefreshLayout.setColorSchemeResources(new int[]{R.color.colorPrimary, R.color.colorPrimary, R.color.colorPrimaryDark});
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -141,11 +141,12 @@ public class WhatsappVideosFragment extends Fragment {
     private void populateRecyclerView() {
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new GridLayoutManager(activity, 2));
-        getStatus();
+
         waVideoAdapter = new WhatsappVideoAdapter(activity, arrayList);
         recyclerView.setAdapter(waVideoAdapter);
         waVideoAdapter.notifyDataSetChanged();
         progressBar.setVisibility(View.GONE);
+        getStatus();
     }
 
     //Implement item click and long click over recycler view
