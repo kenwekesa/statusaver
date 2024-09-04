@@ -422,23 +422,23 @@ public class WhatsappImageFragment extends Fragment {
 
 
 
-    public void getStatus() {
-        arrayList.clear(); // Clear existing items
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // For Android 10 and above, use MediaStore
-            getStatusMediaStore();
-        } else {
-            // For older versions, use direct file access
-            getStatusLegacy();
-        }
-
-        if (waImageAdapter != null) {
-            waImageAdapter.notifyDataSetChanged();
-        } else {
-            Log.e("WhatsappImageFragment", "Adapter is null");
-        }
-    }
+//    public void getStatus() {
+//        arrayList.clear(); // Clear existing items
+//
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+//            // For Android 10 and above, use MediaStore
+//            getStatusMediaStore();
+//        } else {
+//            // For older versions, use direct file access
+//            getStatusLegacy();
+//        }
+//
+//        if (waImageAdapter != null) {
+//            waImageAdapter.notifyDataSetChanged();
+//        } else {
+//            Log.e("WhatsappImageFragment", "Adapter is null");
+//        }
+//    }
 
 
     private void getStatusMediaStore() {
@@ -578,6 +578,53 @@ public class WhatsappImageFragment extends Fragment {
 //            Log.e("WhatsappImageFragment", "Adapter is null");
 //        }
 //    }
+
+
+
+
+
+
+
+
+    //==================
+    public void getStatus() {
+        arrayList.clear();
+        ContentResolver contentResolver = getContext().getContentResolver();
+
+        Uri collection = Uri.parse("/storage/emulated/0/WhatsApp/Media/.Statuses/");
+        String[] projection = new String[] {
+                MediaStore.Images.Media._ID,
+                MediaStore.Images.Media.DISPLAY_NAME,
+                MediaStore.Images.Media.DATE_TAKEN,
+
+        MediaStore.Images.Media.DATA
+    };
+        String selection = MediaStore.Images.Media.DATE_ADDED + " >= ?";
+        String[] selectionArgs = new String[] { String.valueOf(System.currentTimeMillis()
+                - (24 * 60 * 60 * 1000L)) };
+        String sortOrder = MediaStore.Images.Media.DATE_TAKEN + " DESC";
+
+        try (Cursor cursor = contentResolver.query(
+                collection,
+                projection,
+                selection,
+                selectionArgs,
+                sortOrder
+        )) {
+            int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            while (cursor.moveToNext()) {
+                String filePath = cursor.getString(dataColumn);
+                ImageModel model = new ImageModel(filePath);
+                arrayList.add(model);
+            }
+        }
+
+        if (waImageAdapter != null) {
+            waImageAdapter.notifyDataSetChanged();
+        } else {
+            Log.e("WhatsappImageFragment", "Adapter is null");
+        }
+    }
 
 //    public void getStatus() {
 //        arrayList.clear(); // Clear existing items
