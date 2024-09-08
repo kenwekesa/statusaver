@@ -598,7 +598,6 @@ public class WhatsappImageFragment extends Fragment {
         } else {
             collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
         }
-        Log.d("WhatsappImageFragment", "Collection URI: " + collection.toString());
 
         String[] projection = new String[] {
                 MediaStore.Images.Media._ID,
@@ -607,11 +606,24 @@ public class WhatsappImageFragment extends Fragment {
                 MediaStore.Images.Media.DATA
         };
 
-        // Updated selection to be more permissive
-        String selection = MediaStore.Images.Media.DATA + " LIKE ?";
-        String[] selectionArgs = new String[] {
-                "%WhatsApp%Status%"
+        // Define status folder paths for both older and newer versions
+        String[] statusPaths = new String[] {
+                "%WhatsApp/Media/.Statuses%",  // Older version path
+                "%Android/media/com.whatsapp/WhatsApp/Media/.Statuses%",  // Newer version path
+                "%Android/media/com.whatsapp/Media/.Statuses%",  // Alternate newer version path
+                "%WhatsApp Business/Media/.Statuses%",  // For WhatsApp Business
+                "%Android/media/com.whatsapp.w4b/WhatsApp Business/Media/.Statuses%"  // Newer WhatsApp Business path
         };
+
+        // Construct the selection string
+        StringBuilder selectionBuilder = new StringBuilder();
+        String[] selectionArgs = new String[statusPaths.length];
+        for (int i = 0; i < statusPaths.length; i++) {
+            if (i > 0) selectionBuilder.append(" OR ");
+            selectionBuilder.append(MediaStore.Images.Media.DATA + " LIKE ?");
+            selectionArgs[i] = statusPaths[i];
+        }
+        String selection = selectionBuilder.toString();
 
         String sortOrder = MediaStore.Images.Media.DATE_TAKEN + " DESC";
 
@@ -636,11 +648,11 @@ public class WhatsappImageFragment extends Fragment {
                 Log.d("WhatsappImageFragment", "Found file: " + filePath);
 
                 File file = new File(filePath);
-                if (file.exists()) {
+                if (file.exists() && !filePath.contains(".nomedia")) {
                     ImageModel model = new ImageModel(filePath);
                     arrayList.add(model);
                 } else {
-                    Log.w("WhatsappImageFragment", "File does not exist: " + filePath);
+                    Log.w("WhatsappImageFragment", "File does not exist or is .nomedia: " + filePath);
                 }
             }
         } catch (Exception e) {
