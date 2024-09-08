@@ -131,35 +131,35 @@ public class WhatsappImageFragment extends Fragment {
         adView.setAdUnitId("ca-app-pub-3940256099942544/6300978111");*/
 
         //Initialise mobile ads
-        MobileAds.initialize(getContext(), new OnInitializationCompleteListener() {
-            @Override
-            public void onInitializationComplete(InitializationStatus initializationStatus) {
-            }
-        });
+//        MobileAds.initialize(getContext(), new OnInitializationCompleteListener() {
+//            @Override
+//            public void onInitializationComplete(InitializationStatus initializationStatus) {
+//            }
+//        });
 
 
-        mAdView = v.findViewById(R.id.adView);
-        AdRequest adRequest = new AdRequest.Builder().build();
-        mAdView.loadAd(adRequest);
-
-
-         InterstitialAd.load(getContext(),"ca-app-pub-7913609625908071/5998375754", adRequest,
-                new InterstitialAdLoadCallback() {
-                    @Override
-                    public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
-                        // The mInterstitialAd reference will be null until
-                        // an ad is loaded.
-                        mInterstitialAd = interstitialAd;
-                        Log.i(TAG, "onAdLoaded");
-                    }
-
-                    @Override
-                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-                        // Handle the error
-                        Log.i(TAG, loadAdError.getMessage());
-                        mInterstitialAd = null;
-                    }
-                });
+//        mAdView = v.findViewById(R.id.adView);
+//        AdRequest adRequest = new AdRequest.Builder().build();
+//        mAdView.loadAd(adRequest);
+//
+//
+//         InterstitialAd.load(getContext(),"ca-app-pub-7913609625908071/5998375754", adRequest,
+//                new InterstitialAdLoadCallback() {
+//                    @Override
+//                    public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
+//                        // The mInterstitialAd reference will be null until
+//                        // an ad is loaded.
+//                        mInterstitialAd = interstitialAd;
+//                        Log.i(TAG, "onAdLoaded");
+//                    }
+//
+//                    @Override
+//                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+//                        // Handle the error
+//                        Log.i(TAG, loadAdError.getMessage());
+//                        mInterstitialAd = null;
+//                    }
+//                });
         swipeRefreshLayout.setColorSchemeResources(new int[]{R.color.colorPrimary, R.color.colorPrimary, R.color.colorPrimaryDark});
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
@@ -588,20 +588,31 @@ public class WhatsappImageFragment extends Fragment {
 
     //==================
     public void getStatus() {
-        arrayList.clear();
-        ContentResolver contentResolver = getContext().getContentResolver();
+        arrayList.clear(); // Clear existing items
+        Log.d("WhatsappImageFragment", "Starting getStatus() method");
 
-        Uri collection = Uri.parse("/storage/emulated/0/WhatsApp/Media/.Statuses/");
+        ContentResolver contentResolver = getContext().getContentResolver();
+        Uri collection;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            collection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL);
+        } else {
+            collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+        }
+        Log.d("WhatsappImageFragment", "Collection URI: " + collection.toString());
+
         String[] projection = new String[] {
                 MediaStore.Images.Media._ID,
                 MediaStore.Images.Media.DISPLAY_NAME,
                 MediaStore.Images.Media.DATE_TAKEN,
+                MediaStore.Images.Media.DATA
+        };
 
-        MediaStore.Images.Media.DATA
-    };
-        String selection = MediaStore.Images.Media.DATE_ADDED + " >= ?";
-        String[] selectionArgs = new String[] { String.valueOf(System.currentTimeMillis()
-                - (24 * 60 * 60 * 1000L)) };
+        // Updated selection to be more permissive
+        String selection = MediaStore.Images.Media.DATA + " LIKE ?";
+        String[] selectionArgs = new String[] {
+                "%WhatsApp%Status%"
+        };
+
         String sortOrder = MediaStore.Images.Media.DATE_TAKEN + " DESC";
 
         try (Cursor cursor = contentResolver.query(
@@ -611,13 +622,32 @@ public class WhatsappImageFragment extends Fragment {
                 selectionArgs,
                 sortOrder
         )) {
+            if (cursor == null) {
+                Log.e("WhatsappImageFragment", "Cursor is null");
+                return;
+            }
+
+            Log.d("WhatsappImageFragment", "Cursor count: " + cursor.getCount());
+
             int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+
             while (cursor.moveToNext()) {
                 String filePath = cursor.getString(dataColumn);
-                ImageModel model = new ImageModel(filePath);
-                arrayList.add(model);
+                Log.d("WhatsappImageFragment", "Found file: " + filePath);
+
+                File file = new File(filePath);
+                if (file.exists()) {
+                    ImageModel model = new ImageModel(filePath);
+                    arrayList.add(model);
+                } else {
+                    Log.w("WhatsappImageFragment", "File does not exist: " + filePath);
+                }
             }
+        } catch (Exception e) {
+            Log.e("WhatsappImageFragment", "Error querying media", e);
         }
+
+        Log.d("WhatsappImageFragment", "Total items found: " + arrayList.size());
 
         if (waImageAdapter != null) {
             waImageAdapter.notifyDataSetChanged();
