@@ -608,9 +608,11 @@ public class WhatsappImageFragment extends Fragment {
 
         // Define status folder paths for both older and newer versions
         String[] statusPaths = new String[] {
-                "%WhatsApp/Media/.Statuses%",  // Older version path
+
+                "%WhatsApp/Media/.Statuses%",
+//               "%WhatsAppStatus%",  // Older version path
                 "%Android/media/com.whatsapp/WhatsApp/Media/.Statuses%",  // Newer version path
-                "%Android/media/com.whatsapp/Media/.Statuses%",  // Alternate newer version path
+               "%Android/media/com.whatsapp/Media/.Statuses%",  // Alternate newer version path
                 "%WhatsApp Business/Media/.Statuses%",  // For WhatsApp Business
                 "%Android/media/com.whatsapp.w4b/WhatsApp Business/Media/.Statuses%"  // Newer WhatsApp Business path
         };
@@ -642,7 +644,8 @@ public class WhatsappImageFragment extends Fragment {
             Log.d("WhatsappImageFragment", "Cursor count: " + cursor.getCount());
 
             int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-
+            System.out.println(dataColumn);
+            Log.d("DataColumn", "Value: " + dataColumn);
             while (cursor.moveToNext()) {
                 String filePath = cursor.getString(dataColumn);
                 Log.d("WhatsappImageFragment", "Found file: " + filePath);
